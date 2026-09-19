@@ -15,10 +15,13 @@ jobs:
       - name: checkout code
         uses: actions/checkout@v4
       
-      - name: checkout cloudflred
+      - name: checkout cloudflared
         uses: actions/checkout@v4
         with:
           repository: cloudflare/cloudflared
+          path: cloudflared
+          # full history so `git describe` yields a proper version string
+          fetch-depth: 0
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -32,8 +35,17 @@ jobs:
       - name: login to docker hub
         run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
-      - name: build image and push to docker hub
+      # `latest` is a multi-arch manifest (arm/v7 + arm/v5); the per-arch tags
+      # reuse the same build cache and exist for clients that can't pick a
+      # variant from a manifest list themselves.
+      - name: build images and push to docker hub
         run: |
-          docker buildx build --push \
-            --tag stroebs/cloudflared:latest  \
+          docker buildx build --push --provenance=false --sbom=false \
+            --tag stroebs/cloudflared:latest \
+            --platform linux/arm/v7,linux/arm/v5 .
+          docker buildx build --push --provenance=false --sbom=false \
+            --tag stroebs/cloudflared:arm32v7 \
             --platform linux/arm/v7 .
+          docker buildx build --push --provenance=false --sbom=false \
+            --tag stroebs/cloudflared:arm32v5 \
+            --platform linux/arm/v5 .

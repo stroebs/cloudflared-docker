@@ -8,7 +8,7 @@
 # and pick a runtime base per target variant.
 
 # use a builder image for building cloudflared on the host platform
-FROM --platform=$BUILDPLATFORM golang:1.26.8 AS builder
+FROM --platform=$BUILDPLATFORM golang:1.27.3 AS builder
 ARG TARGETOS
 ARG TARGETARCH
 ARG TARGETVARIANT
